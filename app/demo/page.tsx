@@ -205,7 +205,12 @@ export default async function DemoPage({
   searchParams: Promise<{ sessionId?: string }>;
 }) {
   const { sessionId } = await searchParams;
-  const session = sessionId ? await getWebSession(sessionId) : null;
+  let session = null;
+  try {
+    session = sessionId ? await getWebSession(sessionId) : null;
+  } catch {
+    session = null;
+  }
 
   if (sessionId && !session) {
     notFound();

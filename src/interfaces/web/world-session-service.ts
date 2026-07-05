@@ -1,5 +1,10 @@
 import { applyCollapse } from "../../domain/collapse-handler";
 import { createSession, markSessionComplete } from "../../domain/session-engine";
+import {
+  assertSessionOwnerAccess,
+  createSessionAccessToken,
+  hashSessionAccessToken,
+} from "../../domain/session-access";
 import { appendAnalyticsEvent } from "../../domain/session-telemetry";
 import {
   applyInfluenceEventsToSimulationState,
@@ -55,9 +60,14 @@ export type StartWorldSessionParams = {
   modelConfig?: SessionModelConfig;
 };
 
+export type StartedWorldSession = {
+  session: SessionState;
+  accessToken: string;
+};
+
 export async function startWorldSession(
   params: StartWorldSessionParams,
-): Promise<SessionState> {
+): Promise<StartedWorldSession> {
   const packRecord = await loadAuthorizedPack(
     params.worldPackId,
     params.worldPackVersion,
@@ -74,6 +84,7 @@ export async function startWorldSession(
     plan,
     player,
   });
+  const accessToken = createSessionAccessToken();
   let session = createSession({
     dilemma: params.primaryGoal,
     theme: "adventure",
@@ -81,6 +92,7 @@ export async function startWorldSession(
     modelConfig: params.modelConfig,
     visualStyle: "night-cafe",
     maxTurns: 5,
+    sessionAccessTokenHash: hashSessionAccessToken(accessToken),
   });
   session = appendAnalyticsEvent(
     {
@@ -109,7 +121,7 @@ export async function startWorldSession(
   const repository = createSessionRepository();
   await repository.save(session);
   await persistTurnRuns(generated.runs, session.sessionId);
-  return session;
+  return { session, accessToken };
 }
 
 export async function chooseWorldTurnAction(params: {
@@ -280,9 +292,7 @@ export async function retryWorldTurn(params: {
 
 export function assertWorldAccess(session: SessionState, token?: string): void {
   if (session.mode !== "world") return;
-  if (!verifyWorldAccessToken(token, session.worldAccessTokenHash)) {
-    throw new Error("This private World session requires its owner token.");
-  }
+  assertSessionOwnerAccess(session, token);
 }
 
 export function projectSessionForClient(session: SessionState): SessionState {
@@ -298,6 +308,7 @@ export function projectSessionForClient(session: SessionState): SessionState {
   return {
     ...session,
     worldRuntimeState,
+    sessionAccessTokenHash: undefined,
     worldAccessTokenHash: undefined,
     worldTurnRuns: undefined,
     pendingTurn: pendingTurn

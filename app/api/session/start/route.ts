@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { isPresetScenarioId } from "../../../../src/domain/preset-scenarios";
 import {
+  isSessionAccessError,
   isWorldAccessError,
   normalizeLanguage,
 } from "../../../../src/interfaces/web/api-utils";
@@ -10,7 +11,10 @@ import {
   publicRateLimits,
   rateLimitResponse,
 } from "../../../../src/interfaces/web/rate-limit-response";
-import { startWebSession } from "../../../../src/interfaces/web/session-service";
+import {
+  projectWebSessionForClient,
+  startWebSession,
+} from "../../../../src/interfaces/web/session-service";
 import {
   projectSessionForClient,
   startWorldSession,
@@ -142,7 +146,7 @@ export async function POST(request: Request) {
         );
       }
       const custom = body.player?.customCharacter;
-      const session = await startWorldSession({
+      const { session, accessToken } = await startWorldSession({
         worldPackId: body.worldPackId.trim().slice(0, 200),
         worldPackVersion: Number.isFinite(body.worldPackVersion)
           ? body.worldPackVersion
@@ -162,7 +166,10 @@ export async function POST(request: Request) {
         language: responseLanguage,
         modelConfig,
       });
-      return NextResponse.json(projectSessionForClient(session));
+      return NextResponse.json({
+        ...projectSessionForClient(session),
+        accessToken,
+      });
     }
 
     if (!dilemma && !presetScenarioId) {
@@ -176,7 +183,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const session = await startWebSession({
+    const { session, accessToken } = await startWebSession({
       dilemma,
       theme: normalizeTheme(body.theme),
       language: responseLanguage,
@@ -229,9 +236,22 @@ export async function POST(request: Request) {
         : undefined,
     });
 
-    return NextResponse.json(session);
+    return NextResponse.json({
+      ...projectWebSessionForClient(session, accessToken),
+      accessToken,
+    });
   } catch (error) {
     console.error("session_start_failed", error);
+    if (isSessionAccessError(error)) {
+      return NextResponse.json(
+        {
+          error: responseLanguage === "en"
+            ? "This session requires its owner token."
+            : "这个 session 需要 owner token。",
+        },
+        { status: 403 },
+      );
+    }
     if (isWorldAccessError(error)) {
       return NextResponse.json(
         {

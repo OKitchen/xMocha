@@ -4,10 +4,11 @@ import { NextResponse } from "next/server";
 
 import {
   extractAccessToken,
+  isSessionAccessError,
   isWorldAccessError,
 } from "../../../src/interfaces/web/api-utils";
 import {
-  getWebSession,
+  getOwnedWebSession,
   trackWebAnalyticsEvent,
 } from "../../../src/interfaces/web/session-service";
 import { assertWorldAccess } from "../../../src/interfaces/web/world-session-service";
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     }
 
     if (sessionId) {
-      const session = await getWebSession(sessionId);
+      const session = await getOwnedWebSession(sessionId, accessToken);
       if (!session) {
         return NextResponse.json({ error: "Session not found." }, { status: 404 });
       }
@@ -87,6 +88,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("contact_submission_failed", error);
+    if (isSessionAccessError(error)) {
+      return NextResponse.json(
+        { error: "This session requires its owner token." },
+        { status: 403 },
+      );
+    }
     if (isWorldAccessError(error)) {
       return NextResponse.json(
         { error: "This private World session requires its owner token." },

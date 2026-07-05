@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   extractAccessToken,
+  isSessionAccessError,
   isWorldAccessError,
   isWorldRevisionConflictError,
   normalizeRiskProfile,
@@ -67,6 +68,12 @@ export async function POST(request: Request) {
     return NextResponse.json(projectSessionForClient(session));
   } catch (error) {
     console.error("choose_branch_failed", error);
+    if (isSessionAccessError(error)) {
+      return NextResponse.json(
+        { error: "This session requires its owner token." },
+        { status: 403 },
+      );
+    }
     if (isWorldAccessError(error)) {
       return NextResponse.json(
         { error: "This private World session requires its owner token." },

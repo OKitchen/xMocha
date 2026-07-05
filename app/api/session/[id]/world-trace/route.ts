@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 
 import {
   extractAccessToken,
+  isSessionAccessError,
   isWorldAccessError,
 } from "../../../../../src/interfaces/web/api-utils";
 import { createTurnRunRepository } from "../../../../../src/infrastructure/runtime/create-runtime";
-import { getWebSession } from "../../../../../src/interfaces/web/session-service";
+import { getOwnedWebSession } from "../../../../../src/interfaces/web/session-service";
 import { assertWorldAccess } from "../../../../../src/interfaces/web/world-session-service";
 import {
   publicRateLimits,
@@ -25,11 +26,12 @@ export async function GET(
     if (limited) return limited;
 
     const { id } = await context.params;
-    const session = await getWebSession(id);
+    const accessToken = extractAccessToken(request);
+    const session = await getOwnedWebSession(id, accessToken);
     if (!session) {
       return NextResponse.json({ error: `Session "${id}" was not found.` }, { status: 404 });
     }
-    assertWorldAccess(session, extractAccessToken(request));
+    assertWorldAccess(session, accessToken);
 
     const runs = await createTurnRunRepository().listForSession(id);
     return NextResponse.json({
@@ -53,6 +55,12 @@ export async function GET(
     });
   } catch (error) {
     console.error("world_trace_load_failed", error);
+    if (isSessionAccessError(error)) {
+      return NextResponse.json(
+        { error: "This session requires its owner token." },
+        { status: 403 },
+      );
+    }
     if (isWorldAccessError(error)) {
       return NextResponse.json(
         { error: "This private World session requires its owner token." },

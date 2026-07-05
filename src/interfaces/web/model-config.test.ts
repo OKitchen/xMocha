@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { normalizeModelConfig } from "./model-config";
 
@@ -41,5 +41,24 @@ describe("normalizeModelConfig", () => {
     });
 
     expect(normalized?.model).toHaveLength(160);
+  });
+
+  it("drops custom model names in production unless explicitly allowed", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("XMOCHA_ALLOW_CUSTOM_MODEL_NAMES", "");
+
+    try {
+      expect(
+        normalizeModelConfig({
+          provider: "openai",
+          model: "not-in-the-public-catalog",
+        }),
+      ).toEqual({
+        provider: "openai",
+        turnSimulator: "legacy",
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

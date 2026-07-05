@@ -736,23 +736,32 @@ function getSessionCopy(language?: string) {
 
 function worldTokenForSession(sessionId: string): string | null {
   if (typeof window === "undefined") return null;
-  return window.sessionStorage.getItem(`xmocha-world-token:${sessionId}`);
+  return window.sessionStorage.getItem(`xmocha-session-token:${sessionId}`) ??
+    window.sessionStorage.getItem(`xmocha-world-token:${sessionId}`);
 }
 
 function storeWorldTokenForSession(sessionId: string, token: string): void {
   if (typeof window === "undefined" || !token.trim()) return;
+  window.sessionStorage.setItem(`xmocha-session-token:${sessionId}`, token.trim());
   window.sessionStorage.setItem(`xmocha-world-token:${sessionId}`, token.trim());
 }
 
 function worldTokenFromCurrentUrl(): string | null {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
-  return params.get("worldToken")?.trim() || null;
+  return params.get("sessionToken")?.trim() ||
+    params.get("worldToken")?.trim() ||
+    null;
 }
 
 function sessionRequestHeaders(sessionId: string): HeadersInit {
   const token = worldTokenForSession(sessionId);
-  return token ? { "x-xmocha-world-token": token } : {};
+  return token
+    ? {
+        "x-xmocha-session-token": token,
+        "x-xmocha-world-token": token,
+      }
+    : {};
 }
 
 function buildPublicSessionShareUrl(session: SessionPageData, sessionId: string): string | null {
@@ -761,7 +770,7 @@ function buildPublicSessionShareUrl(session: SessionPageData, sessionId: string)
   if (session.privateWorld) {
     const token = worldTokenForSession(sessionId);
     if (!token) return null;
-    url.searchParams.set("worldToken", token);
+    url.searchParams.set("sessionToken", token);
   }
   return url.toString();
 }
@@ -890,6 +899,7 @@ export default function SessionDetailPage() {
     try {
       const response = await fetch(`/api/session/${sessionId}/ablation`, {
         cache: "no-store",
+        headers: sessionRequestHeaders(sessionId),
       });
       const data = await readJsonResponse<AblationReportData | { error: string }>(
         response,
@@ -1140,6 +1150,7 @@ export default function SessionDetailPage() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...sessionRequestHeaders(sessionId),
       },
       body: JSON.stringify({
         sessionId,

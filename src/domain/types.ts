@@ -536,6 +536,7 @@ export type SessionState = {
   pendingWorldTurn?: WorldTurnResult;
   worldTurnRuns?: TurnRun[];
   privateWorld?: boolean;
+  sessionAccessTokenHash?: string;
   worldAccessTokenHash?: string;
   summary?: SessionSummary;
 };

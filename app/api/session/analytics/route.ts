@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { SessionAnalyticsEventName } from "../../../../src/domain/types";
 import {
   extractAccessToken,
+  isSessionAccessError,
   isWorldAccessError,
 } from "../../../../src/interfaces/web/api-utils";
 import {
@@ -77,6 +78,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, analyticsEvents: session.analyticsEvents });
   } catch (error) {
     console.error("analytics_event_failed", error);
+    if (isSessionAccessError(error)) {
+      return NextResponse.json(
+        { error: "This session requires its owner token." },
+        { status: 403 },
+      );
+    }
     if (isWorldAccessError(error)) {
       return NextResponse.json(
         { error: "This private World session requires its owner token." },

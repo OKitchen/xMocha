@@ -4,11 +4,16 @@
 
 import { NextResponse } from "next/server";
 
+import {
+  isSessionAccessError as isDomainSessionAccessError,
+} from "../../domain/session-access";
 import type { IpRateLimitRule } from "../../infrastructure/security/ip-rate-limiter";
 import { rateLimitResponse } from "./rate-limit-response";
 
 export function extractAccessToken(request: Request): string | undefined {
-  return request.headers.get("x-xmocha-world-token") ?? undefined;
+  return request.headers.get("x-xmocha-session-token") ??
+    request.headers.get("x-xmocha-world-token") ??
+    undefined;
 }
 
 export function normalizeLanguage(language: unknown): "en" | "zh-CN" {
@@ -37,6 +42,10 @@ export function isWorldAccessError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return message.includes("private World session requires its owner token") ||
     message.includes("Private WorldPack owner token is invalid");
+}
+
+export function isSessionAccessError(error: unknown): boolean {
+  return isDomainSessionAccessError(error);
 }
 
 export function isWorldRevisionConflictError(error: unknown): boolean {

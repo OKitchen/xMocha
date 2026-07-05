@@ -1091,12 +1091,21 @@ export default function WorldModePage() {
           modelConfig: selectedModelConfig(),
         }),
       });
-      const data = (await response.json()) as { sessionId?: string; error?: string };
+      const data = (await response.json()) as {
+        sessionId?: string;
+        accessToken?: string;
+        error?: string;
+      };
       if (!response.ok || !data.sessionId) throw new Error(data.error ?? copy.startFailed);
-      if (ownerToken) {
+      const sessionToken = data.accessToken ?? ownerToken;
+      if (sessionToken) {
+        window.sessionStorage.setItem(
+          `xmocha-session-token:${data.sessionId}`,
+          sessionToken,
+        );
         window.sessionStorage.setItem(
           `xmocha-world-token:${data.sessionId}`,
-          ownerToken,
+          sessionToken,
         );
       }
       router.push(`/session/${data.sessionId}`);

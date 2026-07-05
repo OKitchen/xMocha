@@ -2,13 +2,13 @@
   "name": "xmocha",
   "version": "0.1.0",
   "description": "Open-source AI simulation engine for branching decisions, agent worlds, and replayable futures.",
-  "homepage": "https://github.com/OKitchen/xMocha-MVP#readme",
+  "homepage": "https://github.com/OKitchen/xMocha#readme",
   "bugs": {
-    "url": "https://github.com/OKitchen/xMocha-MVP/issues"
+    "url": "https://github.com/OKitchen/xMocha/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OKitchen/xMocha-MVP.git"
+    "url": "git+https://github.com/OKitchen/xMocha.git"
   },
   "scripts": {
     "dev": "node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",

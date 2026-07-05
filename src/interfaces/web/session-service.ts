@@ -4,6 +4,13 @@ import {
   appendAnalyticsEvent,
   appendGenerationFailure,
 } from "../../domain/session-telemetry";
+import {
+  assertSessionOwnerAccess,
+  assertSessionReadAccess,
+  createSessionAccessToken,
+  hashSessionAccessToken,
+  hasSessionOwnerAccess,
+} from "../../domain/session-access";
 import { inferDilemmaKind } from "../../domain/dilemma-kind";
 import { normalizeUserProvidedDataInput } from "../../domain/user-provided-data";
 import type {
@@ -32,8 +39,8 @@ import {
   createTurnOrchestrator,
 } from "../../infrastructure/runtime/create-runtime";
 import {
-  assertWorldAccess,
   chooseWorldTurnAction,
+  projectSessionForClient,
   retryWorldTurn,
 } from "./world-session-service";
 
@@ -49,6 +56,11 @@ class GenerationTimeoutError extends Error {
   }
 }
 
+export type StartedWebSession = {
+  session: SessionState;
+  accessToken: string;
+};
+
 export async function startWebSession(params: {
   dilemma?: string;
   theme?: Theme;
@@ -60,8 +72,9 @@ export async function startWebSession(params: {
   presetScenarioId?: PresetScenarioId;
   userContextPack?: UserContextPackInput;
   userProvidedData?: UserProvidedDataInput;
-}): Promise<SessionState> {
+}): Promise<StartedWebSession> {
   const repository = createSessionRepository();
+  const accessToken = createSessionAccessToken();
 
   let session = appendAnalyticsEvent(
     createSession({
@@ -73,6 +86,7 @@ export async function startWebSession(params: {
       modelConfig: params.modelConfig,
       maxTurns: params.maxTurns,
       presetScenarioId: params.presetScenarioId,
+      sessionAccessTokenHash: hashSessionAccessToken(accessToken),
       userContextPack: params.userContextPack,
       userProvidedData: params.userProvidedData,
     }),
@@ -99,7 +113,7 @@ export async function startWebSession(params: {
   );
 
   await repository.save(sessionWithPendingTurn);
-  return sessionWithPendingTurn;
+  return { session: sessionWithPendingTurn, accessToken };
 }
 
 export async function retryWebTurnGeneration(params: {
@@ -121,6 +135,8 @@ export async function retryWebTurnGeneration(params: {
       accessToken: params.accessToken,
     });
   }
+
+  assertSessionOwnerAccess(normalizedSession, params.accessToken);
 
   if (normalizedSession.pendingTurn) {
     if (isPendingTurnOffDilemma(normalizedSession, normalizedSession.pendingTurn)) {
@@ -158,7 +174,7 @@ export async function trackWebAnalyticsEvent(params: {
   if (!session) {
     throw new Error(`Session "${params.sessionId}" was not found.`);
   }
-  assertWorldAccess(session, params.accessToken);
+  assertSessionOwnerAccess(session, params.accessToken);
 
   const nextSession = appendAnalyticsEvent(
     normalizeSessionArrays(session),
@@ -182,7 +198,7 @@ export async function submitWebFeedback(params: {
   if (!session) {
     throw new Error(`Session "${params.sessionId}" was not found.`);
   }
-  assertWorldAccess(session, params.accessToken);
+  assertSessionOwnerAccess(session, params.accessToken);
 
   const normalizedSession = normalizeSessionArrays(session);
   if (normalizedSession.status !== "complete") {
@@ -210,14 +226,34 @@ export async function submitWebFeedback(params: {
   return nextSession;
 }
 
-export async function getWebSession(sessionId: string): Promise<SessionState | null> {
+export async function getWebSession(
+  sessionId: string,
+  accessToken?: string,
+): Promise<SessionState | null> {
   const repository = createSessionRepository();
   const session = await repository.load(sessionId);
-  return session
-    ? hideOffDilemmaPendingTurnForClient(
-        repairDecisionSessionForClient(normalizeSessionArrays(session)),
-      )
-    : null;
+  if (!session) return null;
+
+  const repaired = hideOffDilemmaPendingTurnForClient(
+    repairDecisionSessionForClient(normalizeSessionArrays(session)),
+  );
+  assertSessionReadAccess(repaired, accessToken);
+  return projectWebSessionForClient(repaired, accessToken);
+}
+
+export async function getOwnedWebSession(
+  sessionId: string,
+  accessToken?: string,
+): Promise<SessionState | null> {
+  const repository = createSessionRepository();
+  const session = await repository.load(sessionId);
+  if (!session) return null;
+
+  const repaired = hideOffDilemmaPendingTurnForClient(
+    repairDecisionSessionForClient(normalizeSessionArrays(session)),
+  );
+  assertSessionOwnerAccess(repaired, accessToken);
+  return projectWebSessionForClient(repaired, accessToken);
 }
 
 export async function getWebAblationReport(
@@ -230,7 +266,7 @@ export async function getWebAblationReport(
   if (!session) {
     return null;
   }
-  assertWorldAccess(session, accessToken);
+  assertSessionReadAccess(session, accessToken);
 
   return buildAblationReport(session);
 }
@@ -270,6 +306,7 @@ export async function chooseWebTurnAction(params: {
       accessToken: params.accessToken,
     });
   }
+  assertSessionOwnerAccess(normalizedSession, params.accessToken);
   const pendingTurn = normalizedSession.pendingTurn;
 
   if (!pendingTurn) {
@@ -343,6 +380,34 @@ export async function chooseWebTurnAction(params: {
   );
   await repository.save(nextSession);
   return nextSession;
+}
+
+export function projectWebSessionForClient(
+  session: SessionState,
+  accessToken?: string,
+): SessionState {
+  const owner = hasSessionOwnerAccess(session, accessToken);
+  const projected = stripSessionAccessHashes(projectSessionForClient(session));
+  return owner ? projected : redactPublicSession(projected);
+}
+
+function stripSessionAccessHashes(session: SessionState): SessionState {
+  return {
+    ...session,
+    sessionAccessTokenHash: undefined,
+    worldAccessTokenHash: undefined,
+  };
+}
+
+function redactPublicSession(session: SessionState): SessionState {
+  return {
+    ...session,
+    userContextPack: undefined,
+    userProvidedData: undefined,
+    groundingLog: [],
+    analyticsEvents: [],
+    generationFailures: [],
+  };
 }
 
 async function prepareNextWebSessionState(

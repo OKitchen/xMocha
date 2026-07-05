@@ -2,13 +2,10 @@ import { NextResponse } from "next/server";
 
 import {
   extractAccessToken,
+  isSessionAccessError,
   isWorldAccessError,
 } from "../../../../src/interfaces/web/api-utils";
 import { getWebSession } from "../../../../src/interfaces/web/session-service";
-import {
-  assertWorldAccess,
-  projectSessionForClient,
-} from "../../../../src/interfaces/web/world-session-service";
 import {
   publicRateLimits,
   rateLimitResponse,
@@ -26,7 +23,7 @@ export async function GET(
     if (limited) return limited;
 
     const { id } = await context.params;
-    const session = await getWebSession(id);
+    const session = await getWebSession(id, extractAccessToken(request));
 
     if (!session) {
       return NextResponse.json(
@@ -35,10 +32,15 @@ export async function GET(
       );
     }
 
-    assertWorldAccess(session, extractAccessToken(request));
-    return NextResponse.json(projectSessionForClient(session));
+    return NextResponse.json(session);
   } catch (error) {
     console.error("session_load_failed", error);
+    if (isSessionAccessError(error)) {
+      return NextResponse.json(
+        { error: "This session requires its owner token." },
+        { status: 403 },
+      );
+    }
     if (isWorldAccessError(error)) {
       return NextResponse.json(
         { error: "This private World session requires its owner token." },

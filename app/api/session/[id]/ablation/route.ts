@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   extractAccessToken,
+  isSessionAccessError,
   isWorldAccessError,
 } from "../../../../../src/interfaces/web/api-utils";
 import { getWebAblationReport } from "../../../../../src/interfaces/web/session-service";
@@ -37,6 +38,12 @@ export async function GET(
     return NextResponse.json(report);
   } catch (error) {
     console.error("ablation_report_failed", error);
+    if (isSessionAccessError(error)) {
+      return NextResponse.json(
+        { error: "This session requires its owner token." },
+        { status: 403 },
+      );
+    }
     if (isWorldAccessError(error)) {
       return NextResponse.json(
         { error: "This private World session requires its owner token." },

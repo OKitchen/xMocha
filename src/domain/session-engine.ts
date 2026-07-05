@@ -35,6 +35,7 @@ export function createSession(params: {
   visualMode?: VisualMode;
   visualStyle?: VisualStyle;
   modelConfig?: SessionModelConfig;
+  sessionAccessTokenHash?: string;
   userContextPack?: UserContextPackInput;
   userProvidedData?: UserProvidedDataInput;
 }): SessionState {
@@ -94,6 +95,7 @@ export function createSession(params: {
     domain: params.domain ?? presetScenario?.domain ?? "career",
     theme: params.theme ?? presetScenario?.theme ?? "sci-fi",
     modelConfig: params.modelConfig,
+    sessionAccessTokenHash: params.sessionAccessTokenHash,
     presetScenarioId: params.presetScenarioId,
     turn: 0,
     maxTurns: params.maxTurns ?? 5,

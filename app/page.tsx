@@ -462,6 +462,14 @@ async function readJsonResponse<T>(
   }
 }
 
+function storeSessionAccessToken(sessionId: string, accessToken?: string): void {
+  if (typeof window === "undefined" || !accessToken?.trim()) return;
+  window.sessionStorage.setItem(
+    `xmocha-session-token:${sessionId}`,
+    accessToken.trim(),
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [presetScenarioId, setPresetScenarioId] =
@@ -673,7 +681,7 @@ export default function HomePage() {
       });
 
       const data = await readJsonResponse<
-        | { sessionId: string }
+        | { sessionId: string; accessToken?: string }
         | { error: string }
       >(response, copy.startFailed);
 
@@ -681,6 +689,7 @@ export default function HomePage() {
         throw new Error("error" in data ? data.error : copy.startFailed);
       }
 
+      storeSessionAccessToken(data.sessionId, data.accessToken);
       router.push(`/session/${data.sessionId}`);
     } catch (submitError) {
       setError(
