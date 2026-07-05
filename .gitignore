@@ -1,0 +1,14 @@
+node_modules
+.next
+dist
+.tmp-build
+out
+coverage
+.xmocha-data
+.DS_Store
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.env.*
+!.env.example

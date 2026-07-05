@@ -1,0 +1,93 @@
+{
+  "name": "xmocha",
+  "version": "0.1.0",
+  "description": "Open-source AI simulation engine for branching decisions, agent worlds, and replayable futures.",
+  "homepage": "https://github.com/OKitchen/xMocha-MVP#readme",
+  "bugs": {
+    "url": "https://github.com/OKitchen/xMocha-MVP/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OKitchen/xMocha-MVP.git"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "web:dev": "node scripts/run-next.mjs dev",
+    "web:mock": "XMOCHA_BRANCH_GENERATOR=mock XMOCHA_WORLD_GENERATOR=fallback XMOCHA_SESSION_STORAGE=file node scripts/run-next.mjs dev",
+    "web:build": "next build",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --env-file-if-exists=.env.local ./node_modules/drizzle-kit/bin.cjs migrate",
+    "db:studio": "node --env-file-if-exists=.env.local ./node_modules/drizzle-kit/bin.cjs studio",
+    "dev:list": "node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts list",
+    "dev:resume": "node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts resume",
+    "dev:deepseek": "XMOCHA_MODEL_PROVIDER=deepseek node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "dev:anthropic": "XMOCHA_MODEL_PROVIDER=anthropic node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "dev:openai": "XMOCHA_MODEL_PROVIDER=openai node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "dev:google": "XMOCHA_MODEL_PROVIDER=google node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "dev:hf": "XMOCHA_MODEL_PROVIDER=huggingface node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "dev:gemma": "XMOCHA_MODEL_PROVIDER=gemma GEMMA_RUNTIME=ollama GEMMA_MODEL=gemma4 OLLAMA_BASE_URL=http://localhost:11434 node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "dev:gemma:auto": "XMOCHA_MODEL_PROVIDER=gemma GEMMA_RUNTIME=ollama GEMMA_MODEL=gemma4 OLLAMA_BASE_URL=http://localhost:11434 XMOCHA_AUTOPILOT=1 node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "web:gemma": "XMOCHA_MODEL_PROVIDER=gemma GEMMA_RUNTIME=ollama GEMMA_MODEL=gemma4 OLLAMA_BASE_URL=http://localhost:11434 node scripts/run-next.mjs dev",
+    "web:google": "XMOCHA_MODEL_PROVIDER=google node scripts/run-next.mjs dev",
+    "web:openai": "XMOCHA_MODEL_PROVIDER=openai node scripts/run-next.mjs dev",
+    "web:hf": "XMOCHA_MODEL_PROVIDER=huggingface node scripts/run-next.mjs dev",
+    "web:start:google": "XMOCHA_MODEL_PROVIDER=google node scripts/run-next.mjs start",
+    "dev:mock": "XMOCHA_BRANCH_GENERATOR=mock node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "dev:mock:auto": "XMOCHA_BRANCH_GENERATOR=mock XMOCHA_AUTOPILOT=1 node --env-file-if-exists=.env.local --import tsx src/interfaces/harness/run-sample-session.ts",
+    "eval:core": "XMOCHA_MODEL_PROVIDER=gemma GEMMA_RUNTIME=ollama GEMMA_MODEL=gemma4 OLLAMA_BASE_URL=http://localhost:11434 node --env-file-if-exists=.env.local --import tsx src/interfaces/evaluation/run-core-evaluation.ts",
+    "eval:mock": "XMOCHA_BRANCH_GENERATOR=mock node --import tsx src/interfaces/evaluation/run-core-evaluation.ts",
+    "eval:smoke": "XMOCHA_MODEL_PROVIDER=gemma GEMMA_RUNTIME=ollama GEMMA_MODEL=gemma4 OLLAMA_BASE_URL=http://localhost:11434 XMOCHA_EVAL_MODE=smoke node --env-file-if-exists=.env.local --import tsx src/interfaces/evaluation/run-core-evaluation.ts",
+    "eval:gemma": "XMOCHA_MODEL_PROVIDER=gemma GEMMA_RUNTIME=ollama GEMMA_MODEL=gemma4 OLLAMA_BASE_URL=http://localhost:11434 node --env-file-if-exists=.env.local --import tsx src/interfaces/evaluation/run-core-evaluation.ts",
+    "eval:gemma:smoke": "XMOCHA_MODEL_PROVIDER=gemma GEMMA_RUNTIME=ollama GEMMA_MODEL=gemma4 OLLAMA_BASE_URL=http://localhost:11434 XMOCHA_EVAL_MODE=smoke node --env-file-if-exists=.env.local --import tsx src/interfaces/evaluation/run-core-evaluation.ts",
+    "gemma:smoke": "XMOCHA_MODEL_PROVIDER=gemma GEMMA_RUNTIME=ollama GEMMA_MODEL=gemma4 OLLAMA_BASE_URL=http://localhost:11434 node --env-file-if-exists=.env.local --import tsx src/interfaces/evaluation/run-gemma-smoke.ts",
+    "eval:hf:smoke": "XMOCHA_MODEL_PROVIDER=huggingface XMOCHA_EVAL_MODE=smoke node --env-file-if-exists=.env.local --import tsx src/interfaces/evaluation/run-core-evaluation.ts",
+    "hf:smoke": "node --env-file-if-exists=.env.local --import tsx src/interfaces/evaluation/run-huggingface-smoke.ts",
+    "eval:manual": "node --env-file-if-exists=.env.local --import tsx src/interfaces/evaluation/run-manual-quality-benchmark.ts",
+    "eval:manual:mock": "XMOCHA_BRANCH_GENERATOR=mock XMOCHA_SOCIETY_SIMULATOR=template node --import tsx src/interfaces/evaluation/run-manual-quality-benchmark.ts",
+    "eval:compare:society": "node --import tsx src/interfaces/evaluation/run-society-mode-comparison.ts",
+    "eval:world": "node --import tsx src/interfaces/evaluation/run-world-evaluation.ts",
+    "eval:agent:export": "node --env-file-if-exists=.env.local --import tsx src/interfaces/evaluation/export-agent-eval-cases.ts",
+    "build": "tsc --outDir .tmp-build --noEmit false --declaration false",
+    "check": "tsc --noEmit --project tsconfig.check.json",
+    "test": "npm run check && vitest run"
+  },
+  "keywords": [
+    "ai-agents",
+    "simulation",
+    "decision-support",
+    "llm",
+    "nextjs",
+    "gemma",
+    "open-source",
+    "world-simulation"
+  ],
+  "author": "OKitchen",
+  "license": "Apache-2.0",
+  "type": "module",
+  "overrides": {
+    "postcss": "^8.5.10"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@google/genai": "^2.9.0",
+    "@huggingface/inference": "^4.13.19",
+    "@neondatabase/serverless": "^1.1.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "next": "^16.2.9",
+    "pdf-parse": "^2.4.5",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "undici": "^8.5.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.9"
+  }
+}
