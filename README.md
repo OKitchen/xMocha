@@ -11,6 +11,8 @@ xMocha helps people explore choices as branching futures. Give it a real decisio
 <p align="center">
   <a href="https://xmocha.ai">Website</a>
   ·
+  <a href="#demo-video">Demo video</a>
+  ·
   <a href="#quick-start">Quick start</a>
   ·
   <a href="CONTRIBUTING.md">Contributing</a>
@@ -18,7 +20,19 @@ xMocha helps people explore choices as branching futures. Give it a real decisio
   <a href="LICENSE">Apache-2.0</a>
 </p>
 
-## Two Mode
+## Demo Video
+
+<p align="center">
+  <a href="https://youtu.be/HWlJ38eUxsM">
+    <img src="assets/xmocha-cover-with-tagline-youtube.jpg" alt="Watch the xMocha product demo video" width="720" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://youtu.be/HWlJ38eUxsM"><strong>Watch the product demo</strong></a>
+</p>
+
+## Two Modes
 
 xMocha is a multi-universe decision agent with two modes:
 
@@ -31,7 +45,7 @@ xMocha is a multi-universe decision agent with two modes:
 
 The core idea is simple:
 
-- the **world agents** is the environment: context, constraints, time, events, and state;
+- the **world agents** are the environment: context, constraints, time, events, and state;
 - **social agents** represent people, communities, institutions, or society reacting around the user;
 - the **user** is the observer and decision-maker: the single agent who chooses which future becomes the next present.
 
@@ -284,7 +298,7 @@ Good early contribution areas:
 - accessibility and mobile usability improvements
 - better report/replay/share surfaces
 
-Please read `CONTRIBUTING.md` before opening a PR. For simulation quality, scoring, path metrics, or training-method work, also read `docs/evaluation-and-training.md`. Do not submit copyrighted fictional worlds, private user data, raw prompt logs, or secrets.
+Please read `CONTRIBUTING.md` before opening a PR. For simulation quality, scoring, path metrics, or training-method work, include a short explanation of how you evaluated the change. Do not submit copyrighted fictional worlds, private user data, raw prompt logs, or secrets.
 
 ## Safety And Privacy
 
